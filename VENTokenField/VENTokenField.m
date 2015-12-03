@@ -332,6 +332,7 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
         
         [token setTitleText:[NSString stringWithFormat:@"%@,", title]];
         token.colorScheme = [self colorSchemeForTokenAtIndex:i];
+        token.font = self.inputTextFieldFont;
         
         [self.tokens addObject:token];
         
