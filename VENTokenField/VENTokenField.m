@@ -364,6 +364,7 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
     self.invisibleTextField = [[VENBackspaceTextField alloc] initWithFrame:CGRectZero];
     [self.invisibleTextField setAutocorrectionType:self.autocorrectionType];
     [self.invisibleTextField setAutocapitalizationType:self.autocapitalizationType];
+    self.invisibleTextField.delegate = self;
     self.invisibleTextField.backspaceDelegate = self;
     [self addSubview:self.invisibleTextField];
 }
@@ -555,12 +556,11 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
     return @"";
 }
 
-
 #pragma mark - UITextFieldDelegate
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
-    if ([self.delegate respondsToSelector:@selector(tokenField:didEnterText:)]) {
+    if (textField == self.inputTextField && [self.delegate respondsToSelector:@selector(tokenField:didEnterText:)]) {
         if ([textField.text length]) {
             [self.delegate tokenField:self didEnterText:textField.text];
         }
@@ -571,17 +571,27 @@ static const CGFloat VENTokenFieldDefaultMaxHeight          = 150.0;
 
 - (void)textFieldDidBeginEditing:(UITextField *)textField
 {
+    if ([self.delegate respondsToSelector:@selector(tokenFieldDidBeginEditing:)]) {
+        [self.delegate tokenFieldDidBeginEditing:self];
+    }
+    
     if (textField == self.inputTextField) {
         [self unhighlightAllTokens];
-        
-        if ([self.delegate respondsToSelector:@selector(tokenFieldDidBeginEditing:)]) {
-            [self.delegate tokenFieldDidBeginEditing:self];
-        }
     }
 }
 
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
 {
+    if (!range.location && !range.length && [string isEqualToString:@""]) {
+        [self textFieldDidEnterBackspace:textField];
+        
+        return YES;
+    }
+    
+    if (textField != self.inputTextField) {
+        return YES;
+    }
+    
     [self unhighlightAllTokens];
     NSString *newString = [textField.text stringByReplacingCharactersInRange:range withString:string];
     for (NSString *delimiter in self.delimiters) {
